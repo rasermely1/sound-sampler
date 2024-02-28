@@ -1,59 +1,57 @@
-let sampler;
+// Define synthesizer and reverb effect
+let synth;
 let reverb;
-let buttons = [];
-let effectControl;
-
-function preload() {
-    // Initialize the sampler with audio files
-    sampler = new Tone.Sampler({
-        urls: {
-            A1: "samples/sample1.wav",
-            A2: "samples/sample2.wav",
-            A3: "samples/sample3.wav",
-            A4: "samples/sample4.wav",
-        },
-        baseUrl: "./",
-        onload: () => console.log("Samples loaded"),
-    }).toDestination();
-
-    // Add an effect
-    reverb = new Tone.Reverb(3).toDestination();
-    sampler.connect(reverb);
-}
+let reverbControl;
 
 function setup() {
-    createCanvas(800, 400); // Increased canvas size
-    textAlign(CENTER, CENTER);
+  createCanvas(600, 300); // Larger canvas for better layout
+  background(255);
 
-    // Improved layout for sample playback buttons
-    let buttonWidth = 100;
-    let buttonHeight = 40;
-    let startX = width / 2 - (buttonWidth * 4 + 15 * 3) / 2; // Centering buttons
-    let startY = height / 2 - buttonHeight / 2 - 50; // Adjust vertical position
+  // Start Audio Context
+  Tone.start();
 
-    for (let i = 0; i < 4; i++) {
-        buttons[i] = createButton(`Play Sample ${i+1}`);
-        buttons[i].position(startX + i * (buttonWidth + 15), startY); // Adjusted for spacing
-        buttons[i].size(buttonWidth, buttonHeight);
-        buttons[i].mousePressed(() => playSample(`A${i+1}`));
-    }
+  // Initialize synthesizer
+  synth = new Tone.Synth().toDestination();
 
-    // Effect control slider, positioned for better organization
-    effectControl = createSlider(0, 100, 50);
-    effectControl.position(width / 2 - 150, height - 75); // Centered below the buttons
-    effectControl.size(300, 40); // Increased size for easier control
-    effectControl.input(() => {
-        const value = effectControl.value();
-        reverb.decay = value / 100 * 10; // Control reverb decay
-    });
+  // Initialize reverb effect with 3 seconds decay
+  reverb = new Tone.Reverb(3).toDestination();
+  synth.connect(reverb); // Connect the synth to the reverb
+
+  // Positioning variables
+  let startX = 20, startY = 40, buttonWidth = 100, buttonHeight = 40, gap = 20;
+
+  // Creating buttons
+  for (let i = 0; i < 4; i++) {
+    let noteButton = createButton(`Tone ${i + 1}`);
+    noteButton.position(startX + (buttonWidth + gap) * i, startY);
+    noteButton.size(buttonWidth, buttonHeight);
+    noteButton.mousePressed(() => playTone(['C4', 'E4', 'G4', 'B4'][i]));
+  }
+
+  // Reverb control slider
+  reverbControl = createSlider(0, 100, 50);
+  reverbControl.position(startX, startY + 60);
+  reverbControl.size(400, 20);
+  reverbControl.input(() => {
+    const wetValue = reverbControl.value() / 100;
+    reverb.wet.value = wetValue;
+  });
+}
+
+function playTone(note) {
+  synth.triggerAttackRelease(note, '8n');
 }
 
 function draw() {
-    background(220);
-    textSize(16); // Adjust text size for the effect label
-    text('Reverb Decay Control', effectControl.x + effectControl.width / 2, height - 100);
-}
+  // Clear canvas and redraw background
+  clear();
+  background(220);
 
-function playSample(note) {
-    sampler.triggerAttackRelease(note, '8n');
+  // Text instructions
+  fill(0);
+  textSize(16);
+  text('Click a button to play a tone:', 20, 30);
+
+  // Dynamic text for reverb level
+  text(`Reverb Level: ${reverbControl.value()}%`, 20, 160);
 }
